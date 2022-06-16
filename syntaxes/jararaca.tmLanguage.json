@@ -1,0 +1,955 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "jararaca",
+	"patterns": [
+		{
+			"include": "#tops"
+		}
+	],
+	"repository": {
+		"comment":{
+			"comment":"groups that are used in multiple places and need to be same:",
+			"type": "(?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*\\g<word>\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>))",
+			"word":"(?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b)",
+			"typedvariable":"(?<typedvariable>\\g<word>\\s*:\\s*\\g<type>)"
+		},
+		"tops": {
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#const"
+				},
+				{
+					"include": "#import"
+				},
+				{
+					"include": "#from-import"
+				},
+				{
+					"include": "#mix"
+				},
+				{
+					"include": "#var"
+				},
+				{
+					"include": "#use"
+				},
+				{
+					"include": "#struct"
+				},
+				{
+					"include": "#function"
+				}
+			]
+		},
+		"comments": {
+			"name": "comment.line.number-sign.jararaca",
+			"match": "#.*$"
+		},
+		"import": {
+			"name": "meta.top.import.jararaca",
+			"match": "(import)\\s+(.*)$",
+			"captures": {
+				"1": {
+					"name": "keyword.control.import.jararaca"
+				},
+				"2": {
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#module-path"
+						}
+					]
+				}
+			}
+		},
+		"from-import": {
+			"name": "meta.top.from-import.jararaca",
+			"match": "(from)\\s+(\\S+)\\s+(import)\\s+(\\w+)((?:\\s*,\\s*\\w+)*)\\s*$",
+			"captures": {
+				"1": {
+					"name": "keyword.control.from.jararaca"
+				},
+				"2": {
+					"patterns": [
+						{
+							"include": "#module-path"
+						}
+					]
+				},
+				"3": {
+					"name": "keyword.control.import.jararaca"
+				},
+				"4": {
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"5": {
+					"patterns": [
+						{
+							"include": "#word"
+						},
+						{
+							"match": ",",
+							"name": "punctuation.separator.comma.jararaca"
+						}
+					]
+				}
+			}
+		},
+		"module-path": {
+			"match": "(\\w+)((?:\\.\\w+)*)",
+			"captures": {
+				"1": {
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"2": {
+					"patterns": [
+						{
+							"include": "#word"
+						},
+						{
+							"match": "\\.",
+							"name": "punctuation.separator.dot.jararaca"
+						}
+					]
+				}
+			}
+		},
+		"word": {
+			"match": "\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b",
+			"comment": "entity.word.jararaca"
+		},
+		"const": {
+			"name": "meta.top.const.jararaca",
+			"match": "(const)\\s+(\\w+)\\s+(.*)\\s*$",
+			"captures": {
+				"1": {
+					"name": "keyword.const.jararaca"
+				},
+				"2": {
+					"name": "entity.name.const.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"include": "#cte"
+						}
+					]
+				}
+			}
+		},
+		"cte": {
+			"match": "(\\w+)\\s*((?:(?:[-+*%]|\\/\\/)\\s*\\w+\\s*)*)",
+			"captures": {
+				"1": {
+					"patterns": [
+						{
+							"include": "#int-literal"
+						},
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"2": {
+					"patterns": [
+						{
+							"match": "(?:[-+*%]|\\/\\/)",
+							"name": "keyword.operator.arithmetic.jararaca"
+						},
+						{
+							"include": "#int-literal"
+						},
+						{
+							"include": "#word"
+						}
+					]
+				}
+			}
+		},
+		"mix": {
+			"name": "meta.top.mix.jararaca",
+			"begin": "(mix)\\s+(\\w+)\\s*\\{",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.mix.jararaca"
+				},
+				"2": {
+					"name": "entity.name.function.mix.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				}
+			},
+			"end": "\\s*\\}",
+			"patterns": [
+				{
+					"include": "#word"
+				}
+			]
+		},
+		"use": {
+			"match": "(use)\\s+(\\w+)(.*)",
+			"captures": {
+				"1": {
+					"name": "keyword.control.use.jararaca"
+				},
+				"2": {
+					"name": "entity.name.function.use.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"include": "#function-type"
+						}
+					]
+				}
+			}
+		},
+		"function-type": {
+			"match": "\\((.*)\\)\\s*->\\s*(.*)\\s*$",
+			"captures": {
+				"1": {
+					"patterns": [
+						{
+							"include": "#list-of-types"
+						}
+					]
+				},
+				"2": {
+					"patterns": [
+						{
+							"include": "#type"
+						}
+					]
+				}
+			}
+		},
+		"list-of-types": {
+			"patterns": [
+				{
+					"include": "#type"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.comma.jararaca"
+				}
+			]
+		},
+		"type": {
+			"patterns": [
+				{
+					"name": "support.type.jararaca",
+					"include": "#function-type"
+				},
+				{
+					"comment": "needs <word>",
+					"name": "support.type.jararaca",
+					"match": "(?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*(?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b)\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>))",
+					"captures": {
+						"0": {
+							"patterns": [
+								{
+									"match": "\\[(.*)\\]",
+									"captures": {
+										"1": {
+											"patterns": [
+												{
+													"include": "#cte"
+												}
+											]
+										}
+									}
+								},
+								{
+									"include": "#word"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		"function-arguments": {
+			"comment": "(\\g<word>)\\s*:\\s*(\\g<type>)\\s*,?(.*)$",
+			"match": "((?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b))\\s*:\\s*((?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*\\g<word>\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>)))\\s*,?(.*)$",
+			"captures": {
+				"1": {
+					"name": "variable.parameter.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"include": "#type"
+						}
+					]
+				},
+				"5": {
+					"patterns": [
+						{
+							"include": "#function-arguments"
+						}
+					]
+				}
+			}
+		},
+		"function": {
+			"name": "meta.top.fun.jararaca",
+			"patterns": [
+				{
+					"name": "meta.top.fun.jararaca",
+					"match": "(fun)\\s+(\\w+)\\s*\\s*\\(\\s*(.*)\\)\\s*(?:->\\s*(.*?)\\s*)?\\{(.*)\\}",
+					"captures": {
+						"1": {
+							"name": "keyword.control.fun.jararaca"
+						},
+						"2": {
+							"name": "entity.name.function.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#function-arguments"
+								}
+							]
+						},
+						"4": {
+							"name": "meta.return-type.function.jararaca",
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						},
+						"6": {
+							"patterns": [
+								{
+									"include": "#code-block"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.top.fun.jararaca",
+					"begin": "(fun)\\s+(\\w+)\\s*\\s*\\(\\s*(.*)\\)\\s*(?:->\\s*(.*?)\\s*)?\\{",
+					"end": "\\s*\\}",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.fun.jararaca"
+						},
+						"2": {
+							"name": "entity.name.function.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#function-arguments"
+								}
+							]
+						},
+						"4": {
+							"name": "meta.return-type.function.jararaca",
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						}
+					},
+					"patterns": [
+						{
+							"include": "#code-block"
+						}
+					]
+				}
+			]
+		},
+		"code-block": {
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"statement": {
+			"patterns": [
+				{
+					"patterns": [
+						{
+							"match": "\\s*(.*?)\\s*(#.*$)",
+							"captures": {
+								"1": {
+									"patterns": [
+										{
+											"include": "#statement"
+										}
+									]
+								},
+								"2": {
+									"patterns": [
+										{
+											"include": "#comments"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "meta.statement.return.jararaca",
+					"match": "\\s*(return)\\s+(.*?)\\s*$",
+					"captures": {
+						"1": {
+							"name": "keyword.control.return.jararaca"
+						},
+						"2": {
+							"name": "meta.return-value.jararaca",
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.statement.while.jararaca",
+					"begin": "\\s*(while)\\s+(.*?)\\s*\\{",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.while.jararaca"
+						},
+						"2": {
+							"name": "meta.while-condition.jararaca",
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					},
+					"patterns": [
+						{
+							"include": "#code-block"
+						}
+					],
+					"end": "\\s*\\}"
+				},
+				{
+					"name": "meta.statement.if.jararaca",
+					"patterns": [
+						{
+							"name": "meta.statement.if.jararaca",
+							"begin": "\\s*(?:(if)|(elif))\\s+(.+?)\\s+\\{",
+							"beginCaptures": {
+								"1": {
+									"name": "keyword.control.if.jararaca"
+								},
+								"2": {
+									"name": "keyword.control.elif.jararaca"
+								},
+								"3": {
+									"name": "meta.if-condition.jararaca",
+									"patterns": [
+										{
+											"include": "#expression"
+										}
+									]
+								}
+							},
+							"end": "\\s*(\\})",
+							"patterns": [
+								{
+									"include": "#code-block"
+								}
+							]
+						},
+						{
+							"name": "meta.statement.if.jararaca",
+							"begin": "\\s*(else)\\s*\\{",
+							"beginCaptures": {
+								"1": {
+									"name": "keyword.control.else.jararaca"
+								}
+							},
+							"end": "\\s*\\}",
+							"patterns": [
+								{
+									"include": "#code-block"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "meta.statement.set.jararaca",
+					"match": "\\s*(set)\\s+(\\w+)\\s*=\\s*(.*?)\\s*$",
+					"captures": {
+						"1": {
+							"name": "keyword.other.set.jararaca"
+						},
+						"2": {
+							"name": "variable.name.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.statement.assignment.jararaca",
+					"match": "\\s*(\\w+)\\s*:\\s*(.*?)\\s*=\\s*(.*)$",
+					"captures": {
+						"1": {
+							"name": "variable.name.assignment.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.statement.declaration.jararaca",
+					"match": "\\s*(?:\\[\\s*(.*)\\s*\\]\\s*)?(\\w+)\\s*:(.*)$",
+					"captures": {
+						"1": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							],
+							"name": "variable.name.declaration.jararaca"
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.statement.save.jararaca",
+					"match": "\\s*(.*?)\\s*(?<![<>=!])=(?!=)\\s*(.*?)\\s*$",
+					"captures": {
+						"1": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "meta.statement.expression.jararaca",
+					"match": "\\s*(.+?)\\s*$",
+					"captures": {
+						"1": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		"expression": {
+			"patterns": [
+				{
+					"match": "\\b(or|xor|and)\\b",
+					"name": "keyword.operator.wordlike.$1.jararaca"
+				},
+				{
+					"match": "(\\<|\\>|\\=\\=|\\!\\=|\\<\\=|\\>\\=|\\+|\\-|\\*|\\/\\/|>>|<<|%|@|!)",
+					"name": "keyword.operator.$1.jararaca"
+				},
+				{
+					"include": "#template-string"
+				},
+				{
+					"include": "#strings"
+				},
+				{
+					"include": "#numbers"
+				},
+				{
+					"include": "#cast"
+				},
+				{
+					"include": "#constants"
+				},
+				{
+					"include": "#name-lookup"
+				}
+			]
+		},
+		"template-string": {
+			"name": "string.template.jararaca string.quoted.backtick.jararaca",
+			"begin": "\\s*`",
+			"end": "`\\s*",
+			"patterns": [
+				{
+					"include": "#escape-chars"
+				},
+				{
+					"match": "\\{\\s*\\}",
+					"name": "invalid.illegal.braces.jararaca"
+				},
+				{
+					"begin": "\\{\\s*",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.template-expression.begin.jararaca"
+						}
+					},
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.template-expression.end.jararaca"
+						}
+					},
+					"end": "\\s*\\}",
+					"name": "meta.template.expression.jararaca",
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				}
+			]
+		},
+		"escape-chars": {
+			"match": "\\\\(?:[abtnvfr \\\\\"'`]|x[0-9A-Fa-f]{2})",
+			"name": "constant.character.escape.jararaca"
+		},
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.quoted.single.jararaca",
+					"begin": "'",
+					"end": "'(c?)",
+					"endCaptures": {
+						"1": {
+							"name": "storage.modifier.jararaca"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#escape-chars"
+						}
+					]
+				},
+				{
+					"name": "string.quoted.double.jararaca",
+					"begin": "\"",
+					"end": "\"(c?)",
+					"endCaptures": {
+						"1": {
+							"name": "storage.modifier.jararaca"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#escape-chars"
+						}
+					]
+				}
+			]
+		},
+		"int-literal": {
+			"name": "constant.numeric.hex.jararaca",
+			"match": "(0x)[0-9A-f_]+|(0b)[0-1_]+|(0o)[0-7_]+|[0-9_]+",
+			"captures": {
+				"1": {
+					"name": "storage.modifier.jararaca"
+				},
+				"2": {
+					"name": "storage.modifier.jararaca"
+				},
+				"3": {
+					"name": "storage.modifier.jararaca"
+				},
+				"4": {
+					"name": "invalid.illegal.int-modifiers.jararaca"
+				}
+			}
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hex.jararaca",
+					"match": "(0x)[0-9A-f_]+|(0b)[0-1_]+|(0o)[0-7_]+|[0-9_]+(s|c)?",
+					"captures": {
+						"1": {
+							"name": "storage.modifier.jararaca"
+						},
+						"2": {
+							"name": "storage.modifier.jararaca"
+						},
+						"3": {
+							"name": "storage.modifier.jararaca"
+						},
+						"4": {
+							"name": "storage.modifier.jararaca"
+						}
+					}
+				},
+				{
+					"include": "#int-literals"
+				}
+			]
+		},
+		"cast": {
+			"patterns": [
+				{
+					"match": "(\\$)\\s*\\(\\s*(.+)\\s*,\\s*(.+?)\\s*,?\\s*\\)",
+					"captures": {
+						"1": {
+							"name": "keyword.operator.cast.jararaca"
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						},
+						"3": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"comment": "(\\$)\\s*\\g<type>\\s*\\((.*)\\)",
+					"match": "(\\$)\\s*((?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*(?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b)\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>)))\\s*\\((.*)\\)",
+					"captures": {
+						"1": {
+							"name": "keyword.operator.cast.jararaca"
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						},
+						"5": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		"constants": {
+			"match": "(True|False|Null|Argv|Argc|Void)",
+			"captures": {
+				"1": {
+					"name": "constant.language.$1.jararaca keyword.other.constant.language.$1.jararaca"
+				}
+			}
+		},
+		"name-lookup": {
+			"match": "(\\w+)",
+			"captures": {
+				"1": {
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				}
+			}
+		},
+		"struct": {
+			"name": "meta.top.struct.jararaca",
+			"begin": "(struct)\\s+(\\w+)\\s*\\s*\\{",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.struct.jararaca"
+				},
+				"2": {
+					"name": "entity.name.type.struct.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				}
+			},
+			"end": "\\s*\\}",
+			"patterns": [
+				{
+					"include": "#function"
+				},
+				{
+					"comment": "\\g<typedvariable>\\s*\\=\\s*(.*?)\\s*$",
+					"match": "(?<typedvariable>((?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b))\\s*:\\s*((?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*\\g<word>\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>))))\\s*\\=\\s*(.*?)\\s*$",
+					"captures": {
+						"2": {
+							"name": "variable.name.struct.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"4": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						},
+						"6": {
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						}
+					}
+				},
+				{
+					"comment": "\\g<typedvariable>",
+					"match": "(?<typedvariable>((?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b))\\s*:\\s*((?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*\\g<word>\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>))))",
+					"captures": {
+						"2": {
+							"name": "variable.name.struct.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"4": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		"var": {
+			"name": "meta.top.var.jararaca",
+			"match": "(var)\\s+(\\w+)\\s+(.*)$",
+			"captures": {
+				"1": {
+					"name": "keyword.control.var.jararaca"
+				},
+				"2": {
+					"name":"variable.name.var.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"include": "#type"
+						}
+					]
+				}
+			}
+		}
+	},
+	"scopeName": "source.jararaca"
+}
