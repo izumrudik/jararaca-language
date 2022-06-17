@@ -7,18 +7,20 @@ from typing import Any
 
 def main() -> None:
 	dir = os.path.dirname(os.path.realpath(__file__))
+	logs.basicConfig(
+		filename=os.path.join(dir,f"server.logs"),
+		filemode='a',
+		format=f'%(asctime)s,%(msecs)d, {os.getpid()} %(name)s %(levelname)s %(message)s',
+		datefmt='%H:%M:%S',
+		level=logs.DEBUG)
+	logs.debug("Server started")
+	
 	try:
-		logs.basicConfig(filename=os.path.join(dir,"server.logs"),
-						filemode='w',
-						format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-						datefmt='%H:%M:%S',
-						level=logs.DEBUG)
-		logs.debug("Server started")
-		content = get_json()
-		content
-		logs.debug("Server stopped")
+		while True:
+			handle_request(get_json())
 	except Exception:
 		logs.error(traceback.format_exc())
+	logs.debug("Server stopped")
 
 def get_json() -> Any:
 	headers_string = ""
@@ -27,7 +29,6 @@ def get_json() -> Any:
 		headers_string += chunk
 		if headers_string[-4:] == '\r\n\r\n':
 			headers_string = headers_string[:-4]
-			logs.debug(f"found term: '\\r\\n\\r\\n', headers: {headers_string!r}")
 			break
 	headers = (header.split(': ') for header in headers_string.split('\r\n'))
 	length:int
@@ -37,11 +38,77 @@ def get_json() -> Any:
 		else:
 			logs.error(f"Unknown Header: {name = !r}, {body = !r}")
 			sys.exit(1)
-	logs.debug(f"Read length: {length!r}")
 	length = length
-	content = json.loads(sys.stdin.read(length))
-	logs.debug(f"content is {content!r}")
+	content_string = sys.stdin.read(length)
+	content = json.loads(content_string)
+	logs.debug(f"found request {content['method']!r} with {content_string}")
 	return content
+
+def send_msg(msg:dict[str, Any]) -> None:
+	msg["jsonrpc"] = "2.0"
+	content = json.dumps(msg)
+	length = len(content)
+	sys.stdout.write(f"Content-Length: {length}\r\n")
+	sys.stdout.write(f"\r\n{content}")
+	logs.debug(f"Sent: {content}")
+integer = int
+class ErrorCodes:
+	ParseError: integer = -32700
+	InvalidRequest: integer = -32600
+	MethodNotFound: integer = -32601
+	InvalidParams: integer = -32602
+	InternalError: integer = -32603
+	jsonrpcReservedErrorRangeStart: integer = -32099
+	ServerNotInitialized: integer = -32002
+	UnknownErrorCode: integer = -32001
+	jsonrpcReservedErrorRangeEnd = -32000
+	lspReservedErrorRangeStart: integer = -32899
+	RequestFailed: integer = -32803
+	ServerCancelled: integer = -32802
+	ContentModified: integer = -32801
+	RequestCancelled: integer = -32800
+	lspReservedErrorRangeEnd: integer = -32800
+
+
+
+class TextDocumentSyncKind:
+	None_ = 0
+	Full = 1
+	Incremental = 2
+
+def handle_request(request:dict[str,Any]) -> None:
+	if request["jsonrpc"] != "2.0":
+		logs.error(f"Expected jsonrpc to be 2.0")
+		sys.exit(1)
+	id:int = request["id"]
+	params = request["params"]
+	method:str = request["method"]
+
+	result:dict[str,Any]
+	if method == 'initialize':
+		result = {
+			"capabilities": {
+				"textDocumentSync":TextDocumentSyncKind.Incremental,
+				"workspace":{
+					"workspaceFolders":{
+						"supported":True,
+					}
+				}
+			}
+		}
+	else:
+		logs.error(f"Unknown method: {method!r}, params: {json.dumps(params, indent=4)}")
+		return send_msg({
+		"id": id,
+		"error":{
+			"code":ErrorCodes.MethodNotFound,
+			"message":0,
+		}
+	})
+	send_msg({
+		"id": id,
+		"result":result
+	})
 
 if __name__ == '__main__':
 	main()
