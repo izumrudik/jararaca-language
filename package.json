@@ -21,5 +21,9 @@
             "scopeName": "source.jararaca",
             "path": "./syntaxes/jararaca.tmLanguage.json"
         }]
-    }
+    },
+	"activationEvents": [
+		"onLanguage:jararaca"
+	],
+	"main": "./client/out/extension"
 }

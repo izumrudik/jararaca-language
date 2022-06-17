@@ -1,0 +1,15 @@
+node_modules/**
+client/node_modules/**
+
+package-lock.json
+
+*.o
+*.ja
+*.ll
+*.bc
+*.out
+client/out/**
+
+*.tmp
+*.logs
+*.log

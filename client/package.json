@@ -1,0 +1,15 @@
+{
+	"engines": {
+		"vscode": "^1.68.1"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.68.0",
+		"@types/node": "^18.0.0",
+		"typescript": "^4.7.3"
+	},
+	"dependencies": {
+		"net": "^1.0.2",
+		"path": "^0.12.7",
+		"vscode-languageclient": "^7.0.0"
+	}
+}
