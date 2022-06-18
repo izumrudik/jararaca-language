@@ -1,3 +1,4 @@
 [submodule "server/jararaca"]
 	path = server/jararaca
 	url = https://github.com/izumrudik/jararaca.git
+	branch = main
