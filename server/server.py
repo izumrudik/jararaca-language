@@ -5,6 +5,8 @@ import os
 import traceback
 from typing import Any, NoReturn
 
+import jararaca
+
 def main() -> None:
 	dir = os.path.dirname(os.path.realpath(__file__))
 	logs.basicConfig(
@@ -98,8 +100,7 @@ def handle_content(request:dict[str,Any]) -> None:
 def publish_notification(method:str, params:Any) -> None:
 	send_msg({"method":method,"params":params})
 
-def compute_diagnostics() -> None:
-	assert False, "Not implemented"
+
 
 def handle_request(id:int|str, method:str, params:None|dict[str,Any]|list[Any]) -> None:
 	def reply(result:Any) -> None:
@@ -131,8 +132,9 @@ def handle_request(id:int|str, method:str, params:None|dict[str,Any]|list[Any]) 
 def handle_notification(method:str, params:Any) -> None:
 	if method == 'initialized':
 		logs.info("Received initialized notification, all good")
-	elif method == 'textDocument/didSave':#ignore
-		compute_diagnostics()
+	elif method == 'textDocument/didSave':
+		uri = params["textDocument"]["uri"]
+		compute_diagnostics(uri)
 	elif method == 'textDocument/didOpen':
 		text = params["textDocument"]["text"]
 		if params["textDocument"]["languageId"] != 'jararaca':
@@ -140,6 +142,7 @@ def handle_notification(method:str, params:Any) -> None:
 		uri = params["textDocument"]["uri"]
 		OPENED_FILES_TEXTS[uri] = text
 		logs.info(f"Opened file {uri!r}")
+		compute_diagnostics(uri)
 	elif method == 'textDocument/didChange':
 		text = params["contentChanges"][-1]["text"] # we need to apply all changes, so we take the last one's text 
 		uri = params["textDocument"]["uri"]
@@ -155,6 +158,35 @@ def handle_notification(method:str, params:Any) -> None:
 		logs.warn(f"Received unknown notification: {method!r}, go check")
 
 OPENED_FILES_TEXTS:dict[str,str] = {}
+def compute_diagnostics(file_uri:str) -> None:
+	text = OPENED_FILES_TEXTS[file_uri] + '\n'
+	bin    = jararaca.ErrorBin(silent=True)
+	try:
+		config = jararaca.Config.use_defaults(bin, file_uri)
+		tokens = jararaca.Lexer(text,config,file_uri).lex()
+		module = jararaca.Parser(tokens, config).parse()
+		jararaca.type_check(module,config)
+	except jararaca.ErrorExit: # when a critical error is caught
+		pass
+	logs.debug(bin.errors)
+	publish_notification("textDocument/publishDiagnostics",{
+		"uri":file_uri,
+		"diagnostics": [
+			{
+				"range":{
+					"start":{
+						"line":error.loc.line-1,
+						"character":error.loc.cols-1,
+					},#-1 because I start from 1, client starts from 1
+					"end":{
+						"line":error.loc.line-1,
+						"character":error.loc.cols + 5-1,#FIXME
+					}
+				},
+				"message":f"{error.msg} [{error.typ}]",
+			} for error in bin.errors
+		]
+	})
 
 if __name__ == '__main__':
 	main()
