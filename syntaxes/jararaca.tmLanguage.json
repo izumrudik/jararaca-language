@@ -7,11 +7,11 @@
 		}
 	],
 	"repository": {
-		"comment":{
-			"comment":"groups that are used in multiple places and need to be same:",
+		"comment": {
+			"comment": "groups that are used in multiple places and need to be same:",
 			"type": "(?<type>(?:\\[.*?\\]\\s*|\\s*\\*\\s*)*(?:\\s*(?:void|int|char|short|bool|str)\\s*|\\s*%\\s*\\g<word>\\s*|\\s*\\g<word>\\s*|\\((?:\\g<type>,)*\\g<type>?\\)\\s*->\\s*\\g<type>))",
-			"word":"(?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b)",
-			"typedvariable":"(?<typedvariable>\\g<word>\\s*:\\s*\\g<type>)"
+			"word": "(?<word>\\b[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789]*\\b)",
+			"typedvariable": "(?<typedvariable>\\g<word>\\s*:\\s*\\g<type>)"
 		},
 		"tops": {
 			"patterns": [
@@ -484,7 +484,7 @@
 					"patterns": [
 						{
 							"name": "meta.statement.if.jararaca",
-							"begin": "\\s*(?:(if)|(elif))\\s+(.+?)\\s+\\{",
+							"begin": "\\s*(?:(if)|(elif))\\s+(.+?)\\s*\\{",
 							"beginCaptures": {
 								"1": {
 									"name": "keyword.control.if.jararaca"
@@ -937,7 +937,7 @@
 					"name": "keyword.control.var.jararaca"
 				},
 				"2": {
-					"name":"variable.name.var.jararaca",
+					"name": "variable.name.var.jararaca",
 					"patterns": [
 						{
 							"include": "#word"
@@ -946,6 +946,9 @@
 				},
 				"3": {
 					"patterns": [
+						{
+							"include": "#comments"
+						},
 						{
 							"include": "#type"
 						}
