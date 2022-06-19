@@ -12,7 +12,7 @@ def main() -> None:
 	logs.basicConfig(
 		filename=os.path.join(dir,f"server.logs"),
 		filemode='w',
-		format=f'%(asctime)s,%(msecs)d, {os.getpid()} %(name)s %(levelname)s %(message)s',
+		format=f'%(asctime)s:[%(name)s:{os.getpid()}:%(levelname)s] %(message)s',
 		datefmt='%H:%M:%S',
 		level=logs.DEBUG)
 	logs.debug("Server started")
@@ -168,23 +168,26 @@ def compute_diagnostics(file_uri:str) -> None:
 		jararaca.type_check(module,config)
 	except jararaca.ErrorExit: # when a critical error is caught
 		pass
-	logs.debug(bin.errors)
+	logs.debug(f"Errors found: {len(bin.errors)}")
+	for error in bin.errors:
+		logs.debug(f"\t\t{error}")
+	
 	publish_notification("textDocument/publishDiagnostics",{
 		"uri":file_uri,
 		"diagnostics": [
 			{
 				"range":{
 					"start":{
-						"line":error.loc.line-1,
-						"character":error.loc.cols-1,
-					},#-1 because I start from 1, client starts from 1
+						"line":error.place.start.line-1,
+						"character":error.place.start.cols-1,
+					},#-1 because I start from 1, client starts from 0
 					"end":{
-						"line":error.loc.line-1,
-						"character":error.loc.cols + 5-1,#FIXME
+						"line":error.place.end.line-1,
+						"character":error.place.end.cols-1,
 					}
 				},
 				"message":f"{error.msg} [{error.typ}]",
-			} for error in bin.errors
+			} for error in bin.errors if error.place.file_path == file_uri
 		]
 	})
 
