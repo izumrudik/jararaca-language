@@ -14,15 +14,15 @@ def main() -> None:
 		filemode='a',
 		format=f'%(asctime)s:[%(name)s:{os.getpid()}:%(levelname)s] %(message)s',
 		datefmt='%H:%M:%S',
-		level=logs.DEBUG)
-	logs.debug("Server started")
+		level=logs.INFO)
+	logs.info("Server started")
 	
 	try:
 		while True:
 			handle_content(get_json())
 	except Exception:
 		logs.error(traceback.format_exc())
-	logs.debug("Server stopped")
+	logs.info("Server stopped")
 
 def get_json() -> Any:
 	headers_string = ""
@@ -91,24 +91,26 @@ def handle_content(request:dict[str,Any]) -> None:
 	method:str = request["method"]
 	id:int|str|None = request.get("id")
 	if id is None:
-		logs.debug(f"Received notification '{method}'")
+		logs.info(f"Received notification '{method}'")
 		return handle_notification(method, params)
-	logs.debug(f"Received request #{id} '{method}'")
+	logs.info(f"Received request #{id} '{method}'")
 	return handle_request(id, method, params)
 
 
 def publish_notification(method:str, params:Any) -> None:
+	logs.info(f"Publishing notification: '{method}'")
 	send_msg({"method":method,"params":params})
 
 
 
 def handle_request(id:int|str, method:str, params:Any) -> None:
 	def reply(result:Any) -> None:
+		logs.info(f"Replied to request #{id}")
 		return send_msg({"id":id,"result":result})
 	def error(code:integer, message:str) -> None:
+		logs.info(f"Sent an error to request #{id}")
 		return send_msg({"id":id,"error":{"code":code,"message":message}})
 	if method == 'initialize':
-		logs.info("Received initialize request")
 		CAPABILITIES = {
 				"textDocumentSync":TextDocumentSyncKind.Full,
 				"diagnosticProvider":{
@@ -127,10 +129,10 @@ def handle_request(id:int|str, method:str, params:Any) -> None:
 			"capabilities": CAPABILITIES,
 		})
 	elif method == 'shutdown':
-		logs.info("Received shutdown request, shutting down")
+		logs.info("Received 'shutdown' request, shutting down")
 		return reply(None)
 	elif method == 'exit':
-		logs.info("Received exit request, server exits now (with 0)")
+		logs.info("Received 'exit' request, server exits now (with 0)")
 		sys.exit(0)
 	elif method == 'textDocument/semanticTokens/full':
 		uri = params["textDocument"]["uri"]
@@ -146,17 +148,16 @@ def handle_request(id:int|str, method:str, params:Any) -> None:
 
 def handle_notification(method:str, params:Any) -> None:
 	if method == 'initialized':
-		logs.info("Received initialized notification, all good")
+		pass
 	elif method == 'textDocument/didSave':
 		uri = params["textDocument"]["uri"]
-		compute_diagnostics(uri)
 	elif method == 'textDocument/didOpen':
 		text = params["textDocument"]["text"]
 		if params["textDocument"]["languageId"] != 'jararaca':
 			exit_abnormally(f"Received a request for another language, exiting")
 		uri = params["textDocument"]["uri"]
 		opened_files_texts[uri] = text
-		logs.info(f"Opened file {uri!r}")
+		logs.debug(f"Opened file {uri!r}")
 		compute_diagnostics(uri)
 	elif method == 'textDocument/didChange':
 		text = params["contentChanges"][-1]["text"] # we need to apply all changes, so we take the last one's text 
@@ -166,7 +167,7 @@ def handle_notification(method:str, params:Any) -> None:
 	elif method == 'textDocument/didClose':
 		uri = params["textDocument"]["uri"]
 		del opened_files_texts[uri]
-		logs.info(f"Closed file {uri!r}")
+		logs.debug(f"Closed file {uri!r}")
 	elif method.startswith('$/'):#ignore
 		return
 	else:
@@ -185,10 +186,7 @@ def compute_diagnostics(file_uri:str) -> None:
 		pass
 	send_diagnostics(bin, file_uri)
 def send_diagnostics(bin:jararaca.ErrorBin,file_uri:str) -> None:
-	logs.debug(f"Errors found: {len(bin.errors)}")
-	for error in bin.errors:
-		logs.debug(f"\t\t{error}")
-	
+	logs.debug(f"Errors found: {len(bin.errors)}")	
 	publish_notification("textDocument/publishDiagnostics",{
 		"uri":file_uri,
 		"diagnostics": [
@@ -197,7 +195,7 @@ def send_diagnostics(bin:jararaca.ErrorBin,file_uri:str) -> None:
 					"start":{
 						"line":error.place.start.line-1,
 						"character":error.place.start.cols-1,
-					},#-1 because I start from 1, client starts from 0
+					},#-1 because jararaca starts from 1, client starts from 0
 					"end":{
 						"line":error.place.end.line-1,
 						"character":error.place.end.cols-1,
@@ -233,7 +231,7 @@ TT_TO_TT = {
 assert len(jararaca.SemanticTokenType) == len(TOKEN_TYPES) == len(TT_TO_TT)
 TOKEN_MODIFIERS:list[str] = [
 	'declaration',
-	'definition',
+	'definition',#order matters
 	'static',
 ]
 TM_TO_TM = {
