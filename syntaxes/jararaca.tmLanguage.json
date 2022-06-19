@@ -873,6 +873,9 @@
 			"end": "\\s*\\}",
 			"patterns": [
 				{
+					"include": "#comments"
+				},
+				{
 					"include": "#function"
 				},
 				{
