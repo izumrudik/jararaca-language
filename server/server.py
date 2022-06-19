@@ -14,15 +14,15 @@ def main() -> None:
 		filemode='a',
 		format=f'%(asctime)s:[%(name)s:{os.getpid()}:%(levelname)s] %(message)s',
 		datefmt='%H:%M:%S',
-		level=logs.INFO)
-	logs.info("Server started")
+		level=logs.DEBUG)
+	logs.info(f"\n\n\nServer started ({os.getpid()})")
 	
 	try:
 		while True:
 			handle_content(get_json())
 	except Exception:
 		logs.error(traceback.format_exc())
-	logs.info("Server stopped")
+	logs.info("Server stopped\n")
 
 def get_json() -> Any:
 	headers_string = ""
