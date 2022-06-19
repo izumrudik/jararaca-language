@@ -12,7 +12,7 @@ def main() -> None:
 	dir = os.path.dirname(os.path.realpath(__file__))
 	logs.basicConfig(
 		filename=os.path.join(dir,f"server.logs"),
-		filemode='w',
+		filemode='a',
 		format=f'%(asctime)s:[%(name)s:{os.getpid()}:%(levelname)s] %(message)s',
 		datefmt='%H:%M:%S',
 		level=logs.DEBUG)
