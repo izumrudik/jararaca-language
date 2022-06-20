@@ -2,6 +2,7 @@ import json
 import logging as logs
 import sys
 import os
+from time import sleep
 import traceback
 from typing import Any, NoReturn
 
@@ -78,8 +79,14 @@ class TextDocumentSyncKind:
 	Full = 1
 	Incremental = 2
 
+class MarkupKind:
+	PlainText = 'plaintext'
+	Markdown  = 'markdown'
+
+
 def exit_abnormally(msg:str) -> NoReturn:
 	logs.error(msg)
+	publish_notification('shutdown', None)
 	publish_notification('exit', None)
 	print(f"Server exited abnormally, due to {msg!r}", file=sys.stderr, flush=True)
 	sys.exit(1)
@@ -123,7 +130,8 @@ def handle_request(id:int|str, method:str, params:Any) -> None:
 						"tokenModifiers":TOKEN_MODIFIERS,
 					},
 					"full":True
-				}
+				},
+				"hoverProvider":True,
 			}
 		return reply({
 			"capabilities": CAPABILITIES,
@@ -131,17 +139,20 @@ def handle_request(id:int|str, method:str, params:Any) -> None:
 	elif method == 'shutdown':
 		logs.info("Received 'shutdown' request, shutting down")
 		return reply(None)
-	elif method == 'exit':
-		logs.info("Received 'exit' request, server exits now (with 0)")
-		sys.exit(0)
 	elif method == 'textDocument/semanticTokens/full':
 		uri = params["textDocument"]["uri"]
 		tokens = get_semantic_tokens(uri)
-		if tokens is not None:
-			return reply({
-				"data": tokens
-			})
-		return error(ErrorCodes.RequestFailed, "Could not extract semantic tokens due to invalid syntax")
+		return reply({"data": tokens})
+	elif method == 'textDocument/hover':
+		uri = params["textDocument"]["uri"]
+		line = params["position"]["line"]
+		column = params["position"]["character"]
+		hover = get_hover(uri, line+1, column+1)
+		if hover is None:return reply(None)
+		value,place = hover
+		content = {'value':value,'kind':MarkupKind.Markdown}
+		if place is None:return reply({"contents":content})
+		return reply({"contents":content,"range":place_to_range(place)})
 	else:
 		logs.error(f"Received unknown method: {method!r}, params: {json.dumps(params, indent=4)}")
 		return error(ErrorCodes.MethodNotFound, f"method '{method}' can't be handled on the server")
@@ -149,6 +160,9 @@ def handle_request(id:int|str, method:str, params:Any) -> None:
 def handle_notification(method:str, params:Any) -> None:
 	if method == 'initialized':
 		pass
+	elif method == 'exit':
+		logs.info("Received 'exit' request, server exits now (with 0)")
+		sys.exit(0)
 	elif method == 'textDocument/didSave':
 		uri = params["textDocument"]["uri"]
 	elif method == 'textDocument/didOpen':
@@ -156,102 +170,112 @@ def handle_notification(method:str, params:Any) -> None:
 		if params["textDocument"]["languageId"] != 'jararaca':
 			exit_abnormally(f"Received a request for another language, exiting")
 		uri = params["textDocument"]["uri"]
-		opened_files_texts[uri] = text
 		logs.debug(f"Opened file {uri!r}")
-		compute_diagnostics(uri)
+		update_opened_files(uri,text)
 	elif method == 'textDocument/didChange':
 		text = params["contentChanges"][-1]["text"] # we need to apply all changes, so we take the last one's text 
 		uri = params["textDocument"]["uri"]
-		opened_files_texts[uri] = text
+		update_opened_files(uri,text)
 		logs.debug(f"Changed file {uri!r}")
 	elif method == 'textDocument/didClose':
 		uri = params["textDocument"]["uri"]
-		del opened_files_texts[uri]
+		delete_file(uri)
 		logs.debug(f"Closed file {uri!r}")
 	elif method.startswith('$/'):#ignore
 		return
 	else:
 		logs.warn(f"Received unknown notification: {method!r}, go check")
 
-opened_files_texts:dict[str,str] = {}
-def compute_diagnostics(file_uri:str) -> None:
-	text = opened_files_texts[file_uri] + '\n'
-	bin    = jararaca.ErrorBin(silent=True)
-	config = jararaca.Config.use_defaults(bin, file_uri)
+opened_files_jararaca:dict[str,tuple[jararaca.Config,jararaca.TypeChecker]] = {}
+
+def delete_file(uri:str) -> None:
+	opened_files_jararaca.pop(uri)
+
+def update_opened_files(uri:str, text:str) -> None:
+	text+='\n'
 	try:
-		tokens = jararaca.Lexer(text,config,file_uri).lex()
+		bin    = jararaca.ErrorBin(silent=True)
+		config = jararaca.Config.use_defaults(bin, uri)
+		tokens = jararaca.Lexer(text,config,uri).lex()
 		module = jararaca.Parser(tokens, config).parse()
-		jararaca.TypeChecker(module,config).go_check()
+		tc = jararaca.TypeChecker(module,config, semantic=True)
+	except jararaca.ErrorExit:
+		exit_abnormally(f"A critical error was found while lexing/parsing file {uri!r}")
+	try:
+		tc.go_check()
 	except jararaca.ErrorExit: # when a critical error is caught
 		pass
-	send_diagnostics(bin, file_uri)
-def send_diagnostics(bin:jararaca.ErrorBin,file_uri:str) -> None:
+	opened_files_jararaca[uri] = (config, tc)
+	send_diagnostics(uri)
+
+def send_diagnostics(uri:str) -> None:
+	bin = opened_files_jararaca[uri][0].errors
 	logs.debug(f"Errors found: {len(bin.errors)}")	
 	publish_notification("textDocument/publishDiagnostics",{
-		"uri":file_uri,
+		"uri":uri,
 		"diagnostics": [
 			{
-				"range":{
-					"start":{
-						"line":error.place.start.line-1,
-						"character":error.place.start.cols-1,
-					},#-1 because jararaca starts from 1, client starts from 0
-					"end":{
-						"line":error.place.end.line-1,
-						"character":error.place.end.cols-1,
-					}
-				},
+				"range": place_to_range(error.place),
 				"message":f"{error.msg} [{error.typ}]",
-			} for error in bin.errors if error.place is not None if error.place.file_path == file_uri
+			} for error in bin.errors if error.place is not None if error.place.file_path == uri
 		]
 	})
+
+def place_to_range(place:jararaca.Place) -> dict[str,dict[str,int]]:
+	return {
+		"start":{
+			"line":place.start.line-1,
+			"character":place.start.cols-1,
+		},#-1 because jararaca starts from 1, client starts from 0
+		"end":{
+			"line":place.end.line-1,
+			"character":place.end.cols-1,
+		}
+	}
 
 TOKEN_TYPES = [
 	'namespace',
 	'struct',
 	'parameter',
 	'variable',
-	'property',#order matters
+	'property',
 	'function',
+	'method',
 	'string',
 	'number',
 	'operator',
+	'method',
 ]
 TT_TO_TT = {
-	jararaca.SemanticTokenType.MODULE   :0,
-	jararaca.SemanticTokenType.STRUCT   :1,
-	jararaca.SemanticTokenType.ARGUMENT :2,
-	jararaca.SemanticTokenType.VARIABLE :3,
-	jararaca.SemanticTokenType.PROPERTY :4,
-	jararaca.SemanticTokenType.FUNCTION :5,
-	jararaca.SemanticTokenType.STRING   :6,
-	jararaca.SemanticTokenType.NUMBER   :7,
-	jararaca.SemanticTokenType.OPERATOR :8,
+	jararaca.SemanticTokenType.MODULE           :TOKEN_TYPES.index('namespace'),
+	jararaca.SemanticTokenType.STRUCT           :TOKEN_TYPES.index('struct'),
+	jararaca.SemanticTokenType.ARGUMENT         :TOKEN_TYPES.index('parameter'),
+	jararaca.SemanticTokenType.VARIABLE         :TOKEN_TYPES.index('variable'),
+	jararaca.SemanticTokenType.PROPERTY         :TOKEN_TYPES.index('property'),
+	jararaca.SemanticTokenType.FUNCTION         :TOKEN_TYPES.index('function'),
+	jararaca.SemanticTokenType.MIX              :TOKEN_TYPES.index('function'),
+	jararaca.SemanticTokenType.BOUND_FUNCTION   :TOKEN_TYPES.index('method'),
+	jararaca.SemanticTokenType.STRING           :TOKEN_TYPES.index('string'),
+	jararaca.SemanticTokenType.CHARACTER_STRING :TOKEN_TYPES.index('string'),
+	jararaca.SemanticTokenType.CHARACTER_NUMBER :TOKEN_TYPES.index('number'),
+	jararaca.SemanticTokenType.INTEGER          :TOKEN_TYPES.index('number'),
+	jararaca.SemanticTokenType.SHORT            :TOKEN_TYPES.index('number'),
+	jararaca.SemanticTokenType.OPERATOR         :TOKEN_TYPES.index('operator'),
 }
-assert len(jararaca.SemanticTokenType) == len(TOKEN_TYPES) == len(TT_TO_TT)
+assert len(jararaca.SemanticTokenType) == len(TT_TO_TT)
 TOKEN_MODIFIERS:list[str] = [
 	'declaration',
-	'definition',#order matters
+	'definition',
 	'static',
 ]
 TM_TO_TM = {
-	jararaca.SemanticTokenModifier.DECLARATION :0,
-	jararaca.SemanticTokenModifier.DEFINITION  :1,
-	jararaca.SemanticTokenModifier.STATIC      :2,
+	jararaca.SemanticTokenModifier.DECLARATION :TOKEN_MODIFIERS.index('declaration'),
+	jararaca.SemanticTokenModifier.DEFINITION  :TOKEN_MODIFIERS.index('definition'),
+	jararaca.SemanticTokenModifier.STATIC      :TOKEN_MODIFIERS.index('static'),
 }
 assert len(jararaca.SemanticTokenModifier) == len(TOKEN_MODIFIERS) == len(TM_TO_TM)
-def get_semantic_tokens(file_uri:str) -> list[int]:
-	text = opened_files_texts[file_uri] + '\n'
-	bin    = jararaca.ErrorBin(silent=True)
-	config = jararaca.Config.use_defaults(bin, file_uri)
-	tokens = jararaca.Lexer(text,config,file_uri).lex()
-	module = jararaca.Parser(tokens, config).parse()
-	tc = jararaca.TypeChecker(module,config,semantic=True)
-	try:
-		tc.go_check()
-	except jararaca.ErrorExit:
-		pass
-	send_diagnostics(bin, file_uri)
+def get_semantic_tokens(uri:str) -> list[int]:
+	tc = opened_files_jararaca[uri][1]
 	sk = list(tc.semantic_tokens)
 	sk.sort(key=lambda x:x.place.start.idx)
 	return prepare_semantic_tokens(sk)
@@ -277,6 +301,19 @@ def prepare_semantic_tokens(tokens:list[jararaca.SemanticToken]) -> list[int]:
 			modifier |= 1 << TM_TO_TM[mod]
 		result.append(modifier)
 	return result
+
+def get_hover(uri:str, line:int, char:int) -> tuple[str,jararaca.Place|None]|None:
+	for token in opened_files_jararaca[uri][1].semantic_tokens:
+		if token.place.start.line <= line <= token.place.end.line and \
+		token.place.start.cols <= char <= token.place.end.cols:
+			return f"""\
+### \
+{'static ' if jararaca.SemanticTokenModifier.STATIC in token.modifiers else ''}\
+**{token.typ}**\
+{' definition' if jararaca.SemanticTokenModifier.DEFINITION in token.modifiers else ''}\
+{' declaration' if jararaca.SemanticTokenModifier.DECLARATION in token.modifiers else ''}\
+""", token.place
+	return None
 
 if __name__ == '__main__':
 	main()
