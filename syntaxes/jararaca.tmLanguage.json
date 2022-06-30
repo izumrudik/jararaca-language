@@ -208,7 +208,8 @@
 			]
 		},
 		"use": {
-			"match": "(use)\\s+(\\w+)(.*)",
+			"name":"meta.top.use.jararaca",
+			"match": "(use)\\s+(\\w+)(.+?)(?:\\s+(as)\\s+(\\w+))?\\s*(#.*)?$",
 			"captures": {
 				"1": {
 					"name": "keyword.control.use.jararaca"
@@ -227,6 +228,20 @@
 							"include": "#function-type"
 						}
 					]
+				},
+				"4": {
+					"name": "keyword.control.as.jararaca"
+				},
+				"5": {
+					"name": "entity.name.function.use.as.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"6":{
+					"patterns": [{"include": "#comments"}]
 				}
 			}
 		},

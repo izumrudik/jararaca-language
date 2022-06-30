@@ -1,8 +1,8 @@
 import json
 import logging as logs
+import signal
 import sys
 import os
-from time import sleep
 import traceback
 from typing import Any, NoReturn
 
@@ -25,10 +25,17 @@ def main() -> None:
 		logs.error(traceback.format_exc())
 	logs.info("Server stopped\n")
 
+
+def read_with_timeout(timeout:int) -> str:
+	signal.signal(signal.SIGALRM, lambda signum, frame: exit_abnormally("Timeout while reading from stdin. Most likely client is dead"))
+	signal.alarm(timeout)
+	r = sys.stdin.read(1)
+	signal.alarm(0)
+	return r
 def get_json() -> Any:
-	headers_string = ""
+	headers_string = ''
 	while True:
-		chunk = sys.stdin.read(1)
+		chunk = read_with_timeout(5*60) # 5 minutes timeout
 		headers_string += chunk
 		if headers_string[-4:] == '\r\n\r\n':
 			headers_string = headers_string[:-4]
@@ -40,7 +47,6 @@ def get_json() -> Any:
 			length = int(body)
 		else:
 			exit_abnormally(f"Unknown Header: {name = !r}, {body = !r}")
-	length = length
 	content_string = sys.stdin.read(length)
 	content = json.loads(content_string)
 	logs.debug(f"found request {content['method']!r} with {content_string}")

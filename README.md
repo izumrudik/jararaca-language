@@ -6,7 +6,7 @@ Extension is not released yet.
 ## Features
 
 - tmlanguage syntax highlighting
-
+- language server that can do diagnostics, semantic highlighting, and hover
 <!--
 ## Requirements
 ## Extension Settings

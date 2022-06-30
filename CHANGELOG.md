@@ -5,3 +5,4 @@ Extension is not released yet.
 
 - Initial release
 - Added basic syntax highlighting with tmLanguage file
+- Added a language server that can do diagnostics, semantic highlighting, and hover
