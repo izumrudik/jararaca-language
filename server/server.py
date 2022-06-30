@@ -284,6 +284,8 @@ def prepare_semantic_tokens(tokens:list[jararaca.SemanticToken]) -> list[int]:
 	previous_line = 0
 	previous_char = 0
 	for token in tokens:
+		if token.typ == jararaca.SemanticTokenType.OPERATOR:
+			continue#ignore operators because they override word-like operators' coloring
 		line = token.place.start.line-1
 		diff_line = line-previous_line
 		result.append(diff_line)
