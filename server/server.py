@@ -251,6 +251,7 @@ TOKEN_TYPES = [
 	'number',
 	'operator',
 	'method',
+	'type',
 ]
 TT_TO_TT = {
 	jararaca.SemanticTokenType.MODULE           :TOKEN_TYPES.index('namespace'),
@@ -267,6 +268,7 @@ TT_TO_TT = {
 	jararaca.SemanticTokenType.INTEGER          :TOKEN_TYPES.index('number'),
 	jararaca.SemanticTokenType.SHORT            :TOKEN_TYPES.index('number'),
 	jararaca.SemanticTokenType.OPERATOR         :TOKEN_TYPES.index('operator'),
+	jararaca.SemanticTokenType.TYPE             :TOKEN_TYPES.index('type'),
 }
 assert len(jararaca.SemanticTokenType) == len(TT_TO_TT)
 TOKEN_MODIFIERS:list[str] = [
@@ -289,7 +291,11 @@ def prepare_semantic_tokens(tokens:list[jararaca.SemanticToken]) -> list[int]:
 	result:list[int] = []
 	previous_line = 0
 	previous_char = 0
+	previous_end = 0
 	for token in tokens:
+		if token.place.start.idx < previous_end:
+			continue
+		previous_end = token.place.end.idx
 		if token.typ == jararaca.SemanticTokenType.OPERATOR:
 			continue#ignore operators because they override word-like operators' coloring
 		line = token.place.start.line-1
