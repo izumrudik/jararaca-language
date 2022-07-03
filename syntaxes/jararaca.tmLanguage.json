@@ -41,6 +41,9 @@
 				},
 				{
 					"include": "#function"
+				},
+				{
+					"include": "#typedef"
 				}
 			]
 		},
@@ -208,7 +211,7 @@
 			]
 		},
 		"use": {
-			"name":"meta.top.use.jararaca",
+			"name": "meta.top.use.jararaca",
 			"match": "(use)\\s+(\\w+)(.+?)(?:\\s+(as)\\s+(\\w+))?\\s*(#.*)?$",
 			"captures": {
 				"1": {
@@ -240,8 +243,12 @@
 						}
 					]
 				},
-				"6":{
-					"patterns": [{"include": "#comments"}]
+				"6": {
+					"patterns": [
+						{
+							"include": "#comments"
+						}
+					]
 				}
 			}
 		},
@@ -953,6 +960,33 @@
 				},
 				"2": {
 					"name": "variable.name.var.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"include": "#comments"
+						},
+						{
+							"include": "#type"
+						}
+					]
+				}
+			}
+		},
+		"typedef": {
+			"name": "meta.top.typedef.jararaca",
+			"match": "(typedef)\\s+(\\w+)\\s*=\\s*(.*)",
+			"captures": {
+				"1": {
+					"name": "keyword.control.typedef.jararaca"
+				},
+				"2": {
+					"name": "entity.name.type",
 					"patterns": [
 						{
 							"include": "#word"

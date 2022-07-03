@@ -35,7 +35,7 @@ def read_with_timeout(timeout:int) -> str:
 def get_json() -> Any:
 	headers_string = ''
 	while True:
-		chunk = read_with_timeout(5*60) # 5 minutes timeout
+		chunk = read_with_timeout(300) # 5 minutes timeout
 		headers_string += chunk
 		if headers_string[-4:] == '\r\n\r\n':
 			headers_string = headers_string[:-4]
