@@ -44,6 +44,9 @@
 				},
 				{
 					"include": "#typedef"
+				},
+				{
+					"include": "#enum"
 				}
 			]
 		},
@@ -192,7 +195,7 @@
 			"begin": "(mix)\\s+(\\w+)\\s*\\{",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.mix.jararaca"
+					"name": "keyword.control.mix.jararaca"
 				},
 				"2": {
 					"name": "entity.name.function.mix.jararaca",
@@ -986,7 +989,7 @@
 					"name": "keyword.control.typedef.jararaca"
 				},
 				"2": {
-					"name": "entity.name.type",
+					"name": "entity.name.type.typedef.jararaca",
 					"patterns": [
 						{
 							"include": "#word"
@@ -1004,6 +1007,35 @@
 					]
 				}
 			}
+		},
+		"enum": {
+			"name": "meta.top.enum.jararaca",
+			"begin": "(enum)\\s+(\\w+)\\s*\\{",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.enum.jararaca"
+				},
+				"2": {
+					"name": "entity.name.type.enum.jararaca",
+					"patterns": [
+						{
+							"include": "#word"
+						}
+					]
+				}
+			},
+			"end": "\\s*\\}",
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#enumItem"
+				}
+			]
+		},
+		"enumItem": {
+			"include": "#word"
 		}
 	},
 	"scopeName": "source.jararaca"

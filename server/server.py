@@ -1,3 +1,4 @@
+#!/bin/env python3.10
 import json
 import logging as logs
 import signal
@@ -252,6 +253,8 @@ TOKEN_TYPES = [
 	'operator',
 	'method',
 	'type',
+	'enumMember',
+	'enum',
 ]
 TT_TO_TT = {
 	jararaca.SemanticTokenType.MODULE           :TOKEN_TYPES.index('namespace'),
@@ -269,6 +272,8 @@ TT_TO_TT = {
 	jararaca.SemanticTokenType.SHORT            :TOKEN_TYPES.index('number'),
 	jararaca.SemanticTokenType.OPERATOR         :TOKEN_TYPES.index('operator'),
 	jararaca.SemanticTokenType.TYPE             :TOKEN_TYPES.index('type'),
+	jararaca.SemanticTokenType.ENUM             :TOKEN_TYPES.index('enum'),
+	jararaca.SemanticTokenType.ENUM_ITEM        :TOKEN_TYPES.index('enumMember'),
 }
 assert len(jararaca.SemanticTokenType) == len(TT_TO_TT)
 TOKEN_MODIFIERS:list[str] = [
