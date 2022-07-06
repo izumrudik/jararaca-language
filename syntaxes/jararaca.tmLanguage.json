@@ -1081,6 +1081,9 @@
 		"enumItem": {
 			"patterns": [
 				{
+					"include": "#function"
+				},
+				{
 					"match": "(\\w+)\\s*:\\s*(.+)\\s*",
 					"captures": {
 						"1": {
