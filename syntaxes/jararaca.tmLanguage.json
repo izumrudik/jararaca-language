@@ -439,6 +439,16 @@
 				}
 			]
 		},
+		"match-block": {
+			"patterns": [
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#match-statement"
+				}
+			]
+		},
 		"statement": {
 			"patterns": [
 				{
@@ -480,6 +490,40 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "meta.statement.match.jararaca",
+					"begin": "\\s*(match)\\s+(.*?)\\s*(as)\\s+(\\w+)\\s*\\{",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.match.jararaca"
+						},
+						"2": {
+							"name": "meta.match-value.jararaca",
+							"patterns": [
+								{
+									"include": "#expression"
+								}
+							]
+						},
+						"3": {
+							"name": "keyword.control.as.jararaca"
+						},
+						"4": {
+							"name": "variable.name.match.jararaca",
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						}
+					},
+					"patterns": [
+						{
+							"include": "#match-block"
+						}
+					],
+					"end": "\\s*\\}"
 				},
 				{
 					"name": "meta.statement.while.jararaca",
@@ -558,7 +602,7 @@
 							"name": "keyword.other.set.jararaca"
 						},
 						"2": {
-							"name": "variable.name.jararaca",
+							"name": "variable.name.set.jararaca",
 							"patterns": [
 								{
 									"include": "#word"
@@ -1035,7 +1079,79 @@
 			]
 		},
 		"enumItem": {
-			"include": "#word"
+			"patterns": [
+				{
+					"match": "(\\w+)\\s*:\\s*(.+)\\s*",
+					"captures": {
+						"1": {
+							"patterns": [
+								{
+									"include": "#word"
+								}
+							]
+						},
+						"2": {
+							"patterns": [
+								{
+									"include": "#type"
+								}
+							]
+						}
+					}
+				},
+				{
+					"include": "#word"
+				}
+			]
+		},
+		"match-statement": {
+			"patterns": [
+				{
+					"patterns": [
+						{
+							"match": "\\s*(.*?)\\s*(#.*$)",
+							"captures": {
+								"1": {
+									"patterns": [
+										{
+											"include": "#match-statement"
+										}
+									]
+								},
+								"2": {
+									"patterns": [
+										{
+											"include": "#comments"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"begin": "\\s*(\\w+)\\s*->\\s*{",
+					"captures": {
+						"1": {
+							"patterns": [
+								{
+									"match": "default",
+									"name": "keyword.other.default.jararaca"
+								},
+								{
+									"include": "#word"
+								}
+							]
+						}
+					},
+					"patterns": [
+						{
+							"include": "#code-block"
+						}
+					],
+					"end": "\\s*}"
+				}
+			]
 		}
 	},
 	"scopeName": "source.jararaca"
